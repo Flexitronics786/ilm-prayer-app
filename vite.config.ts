@@ -5,6 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: './', // CRITICAL: Required for LG WebOS apps to load correctly from the local filesystem
   server: {
     host: "::",
     port: 8080,

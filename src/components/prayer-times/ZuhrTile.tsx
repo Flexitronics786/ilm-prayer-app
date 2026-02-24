@@ -2,36 +2,39 @@
 import React from "react";
 import { PrayerTime, DetailedPrayerTime } from "@/types";
 import { PrayerTile } from "./PrayerTile";
-import { getPrayerDetails, getZuhrStart, getZuhrJamat } from "./PrayerTimeUtils";
+import { getPrayerDetails, getZuhrStart, getZuhrJamat, isAfterMidnightBeforeFajr } from "./PrayerTimeUtils";
 
 interface ZuhrTileProps {
   prayerTimes: PrayerTime[];
   detailedTimes: DetailedPrayerTime | null;
+  tomorrowDetailedTimes?: DetailedPrayerTime | null;
 }
 
-export const ZuhrTile: React.FC<ZuhrTileProps> = ({ prayerTimes, detailedTimes }) => {
-  const today = new Date();
-  const isFriday = today.getDay() === 5; // 5 is Friday in JavaScript's getDay()
+export const ZuhrTile: React.FC<ZuhrTileProps> = ({ prayerTimes, detailedTimes, tomorrowDetailedTimes }) => {
   const zuhrDetails = getPrayerDetails(prayerTimes, "Zuhr");
+  const isPostMidnight = isAfterMidnightBeforeFajr(prayerTimes);
 
-  // Ensure Zuhr doesn't have active/next state on Fridays (to prioritize Jummah)
-  const isActive = isFriday ? false : zuhrDetails.isActive;
-  const isNext = isFriday ? false : zuhrDetails.isNext;
-  
+  // Zuhr is passed if Asr, Maghrib, or Isha is currently active
+  const isPassed = !isPostMidnight && prayerTimes.some(p =>
+    (p.name === "Asr" || p.name === "Maghrib" || p.name === "Isha") && p.isActive
+  );
+
+  const displayTimes = (isPassed && tomorrowDetailedTimes) ? tomorrowDetailedTimes : detailedTimes;
+
   return (
     <PrayerTile
       title="Zuhr"
       arabicTitle="ظهر"
-      isActive={isActive}
-      isNext={isNext}
+      isActive={zuhrDetails.isActive}
+      isNext={zuhrDetails.isNext}
       items={[
         {
           label: "Start",
-          time: getZuhrStart(detailedTimes, prayerTimes)
+          time: getZuhrStart(displayTimes, prayerTimes)
         },
         {
           label: "Jamat",
-          time: getZuhrJamat(detailedTimes, prayerTimes)
+          time: getZuhrJamat(displayTimes, prayerTimes)
         }
       ]}
       headerClass="zuhr-header"

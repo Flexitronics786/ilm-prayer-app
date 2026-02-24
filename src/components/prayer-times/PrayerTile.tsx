@@ -38,7 +38,7 @@ export const PrayerTile: React.FC<PrayerTileProps> = ({
           )}
         </div>
       </div>
-      <div className="px-2 sm:px-4 py-2">
+      <div className="px-2 sm:px-4 py-2 flex-grow flex flex-col justify-evenly">
         {items.map((item, index) => (
           <div
             key={index}
@@ -49,9 +49,8 @@ export const PrayerTile: React.FC<PrayerTileProps> = ({
           >
             <span className="text-black text-base sm:text-lg font-bold">{item.label}:</span>
             <span
-              className={`font-bold text-black text-xl sm:text-2xl clock-text ${
-                isTV ? "tv-time-text" : ""
-              }`}
+              className={`font-bold text-black text-xl sm:text-2xl clock-text ${isTV ? "tv-time-text" : ""
+                }`}
             >
               {item.time}
             </span>

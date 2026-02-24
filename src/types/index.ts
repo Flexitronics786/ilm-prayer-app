@@ -11,12 +11,14 @@ export interface DetailedPrayerTime {
   id: string;
   date: string;
   day: string;
+  mosque: string;
   sehri_end: string;
   fajr_jamat: string;
   sunrise: string;
   zuhr_start: string;
   zuhr_jamat: string;
   asr_start: string;
+  asr_mithal_1: string;
   asr_jamat: string;
   maghrib_iftar: string;
   isha_start: string;
@@ -25,29 +27,6 @@ export interface DetailedPrayerTime {
   created_at?: string | null;
 }
 
-export interface Hadith {
-  id: string;
-  text: string;
-  source: string;
-  lastUpdated?: string;
-}
-
-export interface DailyHadith {
-  id?: string;
-  day_of_month: number;
-  month: string;
-  text: string;
-  source: string;
-  created_at?: string | null;
-}
-
-export interface HadithCollectionItem {
-  id: string;
-  text: string;
-  source: string;
-  is_active: boolean;
-  created_at: string | null;
-}
 
 export interface User {
   id: string;

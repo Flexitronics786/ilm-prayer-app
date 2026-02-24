@@ -4,25 +4,25 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { importPrayerTimesFromSheet } from "@/services/dataService";
+import { importPrayerTimesFromSheet, deleteDuplicatePrayerTimes } from "@/services/dataService";
 import { toast } from "sonner";
-import { Loader2, Upload, AlertCircle, FileDown } from 'lucide-react';
+import { Loader2, Upload, AlertCircle, FileDown, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface GoogleSheetsImporterProps {
@@ -35,6 +35,31 @@ const GoogleSheetsImporter = ({ onImportComplete }: GoogleSheetsImporterProps) =
   const [hasHeaderRow, setHasHeaderRow] = useState(true);
   const [isPublic, setIsPublic] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+
+  const handleCleanDuplicates = async () => {
+    setIsCleaning(true);
+    try {
+      const result = await deleteDuplicatePrayerTimes();
+      if (result.success) {
+        if (result.duplicatesRemoved > 0) {
+          toast.success(`Removed ${result.duplicatesRemoved} duplicate entries`);
+          if (onImportComplete) {
+            onImportComplete();
+          }
+        } else {
+          toast.info('No duplicates found. Database is clean!');
+        }
+      } else {
+        toast.error(result.error || 'Failed to clean duplicates');
+      }
+    } catch (error) {
+      console.error('Error cleaning duplicates:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsCleaning(false);
+    }
+  };
 
   const handleImport = async () => {
     if (!sheetId.trim()) {
@@ -72,10 +97,10 @@ const GoogleSheetsImporter = ({ onImportComplete }: GoogleSheetsImporterProps) =
   };
 
   const downloadTemplateCSV = () => {
-    const headers = "date,day,fajr_start,fajr_jamat,sunrise,zuhr_start,zuhr_jamat,asr_start,asr_jamat,maghrib_iftar,isha_start,isha_first_jamat";
-    const sampleRow1 = "2024-06-15,Saturday,03:45,04:15,05:38,12:45,13:15,17:30,17:45,21:20,22:45,23:00";
-    const sampleRow2 = "2024-06-16,Sunday,03:46,04:15,05:38,12:45,13:15,17:30,17:45,21:21,22:45,23:00";
-    
+    const headers = "date,day,fajr_start,fajr_jamat,sunrise,zuhr_start,zuhr_jamat,asr_start,asr_mithal_1,asr_jamat,maghrib_iftar,isha_start,isha_first_jamat";
+    const sampleRow1 = "2024-06-15,Saturday,03:45,04:15,05:38,12:45,13:15,17:30,14:45,17:45,21:20,22:45,23:00";
+    const sampleRow2 = "2024-06-16,Sunday,03:46,04:15,05:38,12:45,13:15,17:30,14:45,17:45,21:21,22:45,23:00";
+
     const csvContent = `${headers}\n${sampleRow1}\n${sampleRow2}`;
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -108,14 +133,14 @@ const GoogleSheetsImporter = ({ onImportComplete }: GoogleSheetsImporterProps) =
                 <li><strong>Time Fields:</strong> 24-hour format HH:MM (e.g., 05:30, 17:45)</li>
                 <li><strong>Required Fields:</strong> date, day, fajr_jamat, sunrise, zuhr_jamat, asr_jamat, maghrib_iftar, isha_first_jamat</li>
                 <li><strong>Column Names:</strong> Must match the database field names exactly if using header row</li>
-                <li><strong>Column Order:</strong> date, day, fajr_start, fajr_jamat, sunrise, zuhr_start, zuhr_jamat, asr_start, asr_jamat, maghrib_iftar, isha_start, isha_first_jamat</li>
+                <li><strong>Column Order:</strong> date, day, fajr_start, fajr_jamat, sunrise, zuhr_start, zuhr_jamat, asr_start, asr_mithal_1, asr_jamat, maghrib_iftar, isha_start, isha_first_jamat</li>
                 <li><strong>Sheet Sharing:</strong> Set to "Anyone with the link can view"</li>
               </ul>
             </AlertDescription>
             <div className="mt-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="text-amber-800 border-amber-300 hover:bg-amber-100"
                 onClick={downloadTemplateCSV}
               >
@@ -184,8 +209,8 @@ const GoogleSheetsImporter = ({ onImportComplete }: GoogleSheetsImporterProps) =
           </div>
         </CardContent>
       </ScrollArea>
-      <CardFooter>
-        <Button onClick={handleImport} disabled={isImporting} className="w-full">
+      <CardFooter className="flex flex-col gap-2">
+        <Button onClick={handleImport} disabled={isImporting || isCleaning} className="w-full">
           {isImporting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -195,6 +220,19 @@ const GoogleSheetsImporter = ({ onImportComplete }: GoogleSheetsImporterProps) =
             <>
               <Upload className="mr-2 h-4 w-4" />
               Import Prayer Times
+            </>
+          )}
+        </Button>
+        <Button onClick={handleCleanDuplicates} disabled={isCleaning || isImporting} variant="outline" className="w-full">
+          {isCleaning ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Cleaning...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clean Up Duplicates
             </>
           )}
         </Button>

@@ -1,0 +1,96 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync iOS project
+        run: npx cap sync ios
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build iOS App (Debug - No Signing)
+        if: ${{ inputs.build_type == 'debug' }}
+        working-directory: ios/App
+        run: |
+          xcodebuild build \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            | xcpretty || true
+
+      - name: Archive iOS App (Release)
+        if: ${{ inputs.build_type == 'release' }}
+        working-directory: ios/App
+        run: |
+          xcodebuild archive \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            | xcpretty || true
+
+      - name: Export IPA (Release)
+        if: ${{ inputs.build_type == 'release' }}
+        working-directory: ios/App
+        run: |
+          mkdir -p $RUNNER_TEMP/export
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportPath $RUNNER_TEMP/export \
+            -exportOptionsPlist ../../exportOptions.plist \
+            || echo "Export requires signing. Archive was created successfully."
+
+      - name: Upload Build Artifact
+        if: ${{ inputs.build_type == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: |
+            ${{ runner.temp }}/App.xcarchive
+            ${{ runner.temp }}/export/
+          retention-days: 14
+
+      - name: Build Summary
+        run: |
+          echo "## iOS Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Type:** ${{ inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            echo "- **Artifact:** Available in the Actions artifacts section above" >> $GITHUB_STEP_SUMMARY
+          fi

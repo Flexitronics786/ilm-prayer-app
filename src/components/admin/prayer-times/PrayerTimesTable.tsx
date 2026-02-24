@@ -5,27 +5,31 @@ import { deletePrayerTimeEntry } from "@/services/dataService";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { DetailedPrayerTime } from "@/types";
+import { MOSQUES } from "@/contexts/MosqueContext";
 import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 
 interface PrayerTimesTableProps {
   prayerTimes: DetailedPrayerTime[];
   onEdit: (entry: DetailedPrayerTime) => void;
+  mosque: string;
 }
 
-export const PrayerTimesTable = ({ 
+export const PrayerTimesTable = ({
   prayerTimes,
-  onEdit 
+  onEdit,
+  mosque
 }: PrayerTimesTableProps) => {
   const queryClient = useQueryClient();
-  
+  const mosqueConfig = MOSQUES.find(m => m.id === mosque);
+
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this prayer time?")) {
       try {
@@ -42,21 +46,21 @@ export const PrayerTimesTable = ({
       }
     }
   };
-  
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-GB', { 
-        weekday: 'short', 
-        day: '2-digit', 
-        month: 'short', 
-        year: 'numeric' 
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
       });
     } catch (e) {
       return dateString;
     }
   };
-  
+
   return (
     <div className="rounded-md border bg-white max-h-[600px] overflow-auto">
       <div className="relative">
@@ -102,9 +106,14 @@ export const PrayerTimesTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {entry.asr_start?.slice(0, 5) ? (
+                    {(entry.asr_mithal_1?.slice(0, 5) || entry.asr_start?.slice(0, 5)) ? (
                       <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground">Start: {entry.asr_start.slice(0, 5)}</div>
+                        {mosqueConfig?.showMithal1 && entry.asr_mithal_1?.slice(0, 5) && (
+                          <div className="text-xs text-muted-foreground">Mithal 1: {entry.asr_mithal_1.slice(0, 5)}</div>
+                        )}
+                        {entry.asr_start?.slice(0, 5) && (
+                          <div className="text-xs text-muted-foreground">Start: {entry.asr_start.slice(0, 5)}</div>
+                        )}
                         <div>Jamat: {entry.asr_jamat?.slice(0, 5) || "-"}</div>
                       </div>
                     ) : (

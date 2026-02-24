@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android
+*.keystore
+local.properties
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+android/capacitor-android/build/
+
+# iOS
+ios/App/Pods/
+ios/App/App/public/
+
+# Play Store assets
+play_store_assets/
+
+# Sensitive
+*.aab
+*.apk
+*.ipa

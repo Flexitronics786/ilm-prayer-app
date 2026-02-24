@@ -7,23 +7,24 @@ import { ZuhrTile } from "./prayer-times/ZuhrTile";
 import { AsrTile } from "./prayer-times/AsrTile";
 import { MaghribTile } from "./prayer-times/MaghribTile";
 import { IshaTile } from "./prayer-times/IshaTile";
-import { JummahTile } from "./prayer-times/JummahTile";
+import { NextPrayerCountdown } from "./prayer-times/NextPrayerCountdown";
 import { useEffect } from "react";
 import { getCurrentTime24h } from "@/utils/dateUtils";
 
 interface PrayerTimesTableProps {
   prayerTimes: PrayerTime[];
   detailedTimes: any;
+  tomorrowDetailedTimes?: any;
   compactView?: boolean;
 }
 
-const PrayerTimesTable = ({ prayerTimes, detailedTimes, compactView = false }: PrayerTimesTableProps) => {
+const PrayerTimesTable = ({ prayerTimes, detailedTimes, tomorrowDetailedTimes, compactView = false }: PrayerTimesTableProps) => {
   const isTV = useTVDisplay();
-  const isFriday = new Date().getDay() === 5; // 5 is Friday in JavaScript's getDay()
+
 
   // Use our updated hook for prayer time alerts - this will play sounds at jamat times
   usePrayerTimeAlerts(prayerTimes, detailedTimes);
-  
+
   // Add periodic logging of prayer times and current time for debugging
   useEffect(() => {
     const logInterval = setInterval(() => {
@@ -41,23 +42,23 @@ const PrayerTimesTable = ({ prayerTimes, detailedTimes, compactView = false }: P
         });
       }
     }, 60000); // Log every minute on TV devices
-    
+
     return () => clearInterval(logInterval);
   }, [isTV, detailedTimes]);
 
   return (
-    <div className="animate-scale-in">
-      <div className="mb-2 sm:mb-3">
+    <div className="animate-scale-in h-full flex flex-col">
+      <div className="mb-2 sm:mb-3 flex-shrink-0">
         <h3 className="text-2xl sm:text-3xl font-bold text-black font-serif">Prayer Times</h3>
       </div>
 
-      <div className={`grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 ${isTV ? 'grid-cols-3 gap-3 tv-prayer-grid' : 'mobile-prayer-grid'}`}>
-        <FajrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
-        <ZuhrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
-        <AsrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
-        <MaghribTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
-        <IshaTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
-        <JummahTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
+      <div className={`flex-grow grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 ${isTV ? 'grid-cols-3 grid-rows-2 gap-3 tv-prayer-grid' : 'mobile-prayer-grid'}`}>
+        <NextPrayerCountdown prayerTimes={prayerTimes} detailedTimes={detailedTimes} />
+        <FajrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} tomorrowDetailedTimes={tomorrowDetailedTimes} />
+        <ZuhrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} tomorrowDetailedTimes={tomorrowDetailedTimes} />
+        <AsrTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} tomorrowDetailedTimes={tomorrowDetailedTimes} />
+        <MaghribTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} tomorrowDetailedTimes={tomorrowDetailedTimes} />
+        <IshaTile prayerTimes={prayerTimes} detailedTimes={detailedTimes} tomorrowDetailedTimes={tomorrowDetailedTimes} />
       </div>
     </div>
   );

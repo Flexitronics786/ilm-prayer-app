@@ -20,6 +20,14 @@ export const getPrayerDetails = (prayerTimes: PrayerTime[], name: string) => {
   };
 };
 
+export const isAfterMidnightBeforeFajr = (prayerTimes: PrayerTime[]): boolean => {
+  // Isha is marked active after midnight AND before Fajr by the dataService.
+  // We can just check if Isha is active AND the current time is morning (< 12:00)
+  const ishaActive = prayerTimes.some(p => p.name === "Isha" && p.isActive);
+  const currentHour = new Date().getHours();
+  return ishaActive && currentHour < 12;
+};
+
 export const getPrayerTime = (prayerTimes: PrayerTime[], name: string) => {
   return prayerTimes.find(
     (prayer) =>
@@ -73,6 +81,13 @@ export const getAsrStart = (detailedTimes: DetailedPrayerTime | null, prayerTime
   return asr ? convertTo12Hour(asr.time) : "";
 };
 
+export const getAsrMithal1 = (detailedTimes: DetailedPrayerTime | null, prayerTimes: PrayerTime[]) => {
+  if (detailedTimes && detailedTimes.asr_mithal_1) {
+    return convertTo12Hour(detailedTimes.asr_mithal_1);
+  }
+  return "";
+};
+
 export const getAsrJamat = (detailedTimes: DetailedPrayerTime | null, prayerTimes: PrayerTime[]) => {
   if (detailedTimes && detailedTimes.asr_jamat) {
     return convertTo12Hour(detailedTimes.asr_jamat);
@@ -110,34 +125,4 @@ export const getSunriseFromDetailedTimes = (detailedTimes: DetailedPrayerTime | 
     return convertTo12Hour(detailedTimes.sunrise);
   }
   return getSunriseTime(prayerTimes);
-};
-
-export const getJummahKhutbahTime = (detailedTimes: DetailedPrayerTime | null, prayerTimes: PrayerTime[]) => {
-  const jamatTime = getZuhrJamat(detailedTimes, prayerTimes);
-  if (!jamatTime) return "";
-  
-  const [time, period] = jamatTime.split(' ');
-  const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
-  
-  const date = new Date();
-  let hour = hours;
-  
-  if (period === 'PM' && hour < 12) hour += 12;
-  if (period === 'AM' && hour === 12) hour = 0;
-  
-  date.setHours(hour, minutes);
-  
-  date.setMinutes(date.getMinutes() - 10);
-  
-  let khutbahHour = date.getHours();
-  const khutbahMinutes = date.getMinutes();
-  let ampm = 'AM';
-  
-  if (khutbahHour >= 12) {
-    ampm = 'PM';
-    if (khutbahHour > 12) khutbahHour -= 12;
-  }
-  if (khutbahHour === 0) khutbahHour = 12;
-  
-  return `${khutbahHour}:${khutbahMinutes.toString().padStart(2, '0')} ${ampm}`;
 };

@@ -5,6 +5,8 @@ import { getCurrentUser, logout } from "@/services/authService";
 import { fetchPrayerTimes } from "@/services/dataService";
 import AdminNavbar from "@/components/admin/AdminNavbar";
 import PrayerTimesTableEditor from "@/components/admin/PrayerTimesTableEditor";
+import ClaudePromptCopier from "@/components/admin/ClaudePromptCopier";
+import { MosqueHealthStatus } from "@/components/admin/MosqueHealthStatus";
 import { PrayerTime, User } from "@/types";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,7 @@ const AdminDashboard = () => {
         // Check if user is authenticated
         const user = await getCurrentUser();
         console.log("Current user:", user);
-        
+
         if (!user || !user.isAdmin) {
           setAuthError("You must be logged in as an admin to access this page");
           toast.error("You must be logged in as an admin to access this page");
@@ -35,9 +37,9 @@ const AdminDashboard = () => {
           }, 2000);
           return;
         }
-        
+
         setCurrentUser(user);
-        
+
         // Load data
         try {
           const currentPrayerTimes = await fetchPrayerTimes();
@@ -98,7 +100,7 @@ const AdminDashboard = () => {
     <div className="h-screen flex flex-col overflow-hidden bg-amber-50">
       <div className="pattern-overlay"></div>
       <AdminNavbar onLogout={handleLogout} />
-      
+
       <ScrollArea className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           {currentUser && (
@@ -106,11 +108,22 @@ const AdminDashboard = () => {
               Logged in as: {currentUser.email}
             </div>
           )}
-          
+
+          {/* Mosque Health Status */}
+          <div className="w-full mb-6">
+            <h2 className="text-2xl font-bold text-amber-800 mb-4">Dashboard Overview</h2>
+            <MosqueHealthStatus />
+          </div>
+
           {/* Prayer Times Table */}
           <div className="w-full mb-6">
             <h2 className="text-2xl font-bold text-amber-800 mb-4">Prayer Times Management</h2>
             <PrayerTimesTableEditor />
+          </div>
+
+          {/* Claude Prompt Copier */}
+          <div className="w-full mb-6">
+            <ClaudePromptCopier />
           </div>
         </div>
       </ScrollArea>

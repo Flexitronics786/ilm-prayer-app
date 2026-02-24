@@ -1,4 +1,3 @@
-
 /* Import all CSS files */
 @import './styles/theme.css';
 @import './styles/cards.css';
@@ -14,12 +13,11 @@
   color: #000000 !important;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: #000000;
 }
-
-/* Jummah specific styling for Fridays - red border like active prayer */
-.jummah-header.friday {
-  border-color: #ea384c !important;
-}
-

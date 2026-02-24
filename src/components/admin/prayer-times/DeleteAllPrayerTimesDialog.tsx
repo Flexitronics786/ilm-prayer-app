@@ -18,11 +18,13 @@ import {
 interface DeleteAllPrayerTimesDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  mosque: string;
 }
 
-export const DeleteAllPrayerTimesDialog = ({ 
-  isOpen, 
-  onOpenChange 
+export const DeleteAllPrayerTimesDialog = ({
+  isOpen,
+  onOpenChange,
+  mosque
 }: DeleteAllPrayerTimesDialogProps) => {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const queryClient = useQueryClient();
@@ -30,7 +32,7 @@ export const DeleteAllPrayerTimesDialog = ({
   const handleDeleteAllData = async () => {
     setIsDeletingAll(true);
     try {
-      const result = await deleteAllPrayerTimes();
+      const result = await deleteAllPrayerTimes(mosque);
       if (result) {
         toast.success("All prayer times data has been deleted");
         onOpenChange(false);
@@ -59,8 +61,8 @@ export const DeleteAllPrayerTimesDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={handleDeleteAllData}
             disabled={isDeletingAll}
           >

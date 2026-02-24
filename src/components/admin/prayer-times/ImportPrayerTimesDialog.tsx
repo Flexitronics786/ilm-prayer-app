@@ -28,58 +28,62 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import { MOSQUES } from "@/contexts/MosqueContext";
 
 interface ImportPrayerTimesDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  mosque: string;
 }
 
-export const ImportPrayerTimesDialog = ({ 
-  isOpen, 
-  onOpenChange 
+export const ImportPrayerTimesDialog = ({
+  isOpen,
+  onOpenChange,
+  mosque
 }: ImportPrayerTimesDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
-  
+  const mosqueConfig = MOSQUES.find(m => m.id === mosque);
+
   const [importData, setImportData] = useState({
     sheetUrl: '',
     tabName: 'Sheet1',
     hasHeaderRow: true,
     isPublic: true
   });
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setImportData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleImportSelectChange = (name: string, value: string) => {
     setImportData(prev => ({ ...prev, [name]: value === 'true' }));
   };
-  
+
   const extractSheetId = (url: string): string => {
     // Extract Sheet ID from various Google Sheets URL formats
     if (!url) return '';
-    
+
     // Handles URLs like: https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (match && match[1]) {
       return match[1];
     }
-    
+
     // If not a URL, treat as direct ID
     if (!url.includes('/') && !url.includes('\\')) {
       return url.trim();
     }
-    
+
     return '';
   };
-  
+
   const downloadTemplateCSV = () => {
-    const headers = "date,day,fajr_start,fajr_jamat,sunrise,zuhr_start,zuhr_jamat,asr_start,asr_jamat,maghrib_iftar,isha_start,isha_first_jamat,isha_second_jamat";
-    const sampleRow1 = "2024-06-15,Saturday,03:45,04:15,05:38,12:45,13:15,17:30,17:45,21:20,22:45,23:00,23:30";
-    const sampleRow2 = "2024-06-16,Sunday,03:46,04:15,05:38,12:45,13:15,17:30,17:45,21:21,22:45,23:00,23:30";
-    
+    const headers = "date,day,fajr_start,fajr_jamat,sunrise,zuhr_start,zuhr_jamat,asr_start,asr_mithal_1,asr_jamat,maghrib_iftar,isha_start,isha_first_jamat,isha_second_jamat";
+    const sampleRow1 = "2024-06-15,Saturday,03:45,04:15,05:38,12:45,13:15,17:30,14:45,17:45,21:20,22:45,23:00,23:30";
+    const sampleRow2 = "2024-06-16,Sunday,03:46,04:15,05:38,12:45,13:15,17:30,14:45,17:45,21:21,22:45,23:00,23:30";
+
     const csvContent = `${headers}\n${sampleRow1}\n${sampleRow2}`;
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -90,33 +94,34 @@ export const ImportPrayerTimesDialog = ({
     link.click();
     document.body.removeChild(link);
   };
-  
+
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       if (!importData.sheetUrl) {
         toast.error("Please enter a Google Sheet URL or ID");
         setIsSubmitting(false);
         return;
       }
-      
+
       const sheetId = extractSheetId(importData.sheetUrl);
-      
+
       if (!sheetId) {
         toast.error("Could not extract a valid Sheet ID from the provided URL");
         setIsSubmitting(false);
         return;
       }
-      
+
       const result = await importPrayerTimesFromSheet(
         sheetId,
         importData.tabName,
         importData.hasHeaderRow,
-        importData.isPublic
+        importData.isPublic,
+        mosque
       );
-      
+
       if (result.success) {
         toast.success(`Successfully imported ${result.count} prayer times`);
         if (result.error) {
@@ -151,7 +156,7 @@ export const ImportPrayerTimesDialog = ({
             The sheet must be publicly accessible and have the correct column format.
           </DialogDescription>
         </DialogHeader>
-        
+
         <ScrollArea className="h-[60vh] pr-4">
           <Alert className="mb-4 bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-800" />
@@ -163,14 +168,14 @@ export const ImportPrayerTimesDialog = ({
                 <li><strong>Time Fields:</strong> 24-hour format HH:MM (e.g., 05:30, 17:45)</li>
                 <li><strong>Required Fields:</strong> date, day, fajr_jamat, sunrise, zuhr_jamat, asr_jamat, maghrib_iftar, isha_first_jamat</li>
                 <li><strong>Column Names:</strong> Must match the database field names exactly if using header row</li>
-                <li><strong>Column Order:</strong> date, day, fajr_start, fajr_jamat, sunrise, zuhr_start, zuhr_jamat, asr_start, asr_jamat, maghrib_iftar, isha_start, isha_first_jamat, isha_second_jamat</li>
+                <li><strong>Column Order:</strong> date, day, fajr_start, fajr_jamat, sunrise, zuhr_start, zuhr_jamat, asr_start, asr_mithal_1, asr_jamat, maghrib_iftar, isha_start, isha_first_jamat, isha_second_jamat</li>
                 <li><strong>Sheet Sharing:</strong> Set to "Anyone with the link can view"</li>
               </ul>
             </AlertDescription>
             <div className="mt-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="text-amber-800 border-amber-300 hover:bg-amber-100"
                 onClick={downloadTemplateCSV}
               >
@@ -179,10 +184,35 @@ export const ImportPrayerTimesDialog = ({
               </Button>
             </div>
           </Alert>
-          
+
           <form onSubmit={handleImport} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="sheetUrl">Google Sheet URL</Label>
+              {mosqueConfig?.googleSheetUrl && (
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-100 mb-2">
+                  <p className="text-sm text-blue-800 mb-2 font-medium">Saved Sheet for {mosqueConfig.name}</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-white text-blue-700 hover:bg-blue-50 border-blue-200"
+                      onClick={() => window.open(mosqueConfig.googleSheetUrl, '_blank')}
+                    >
+                      Open Sheet ↗
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      onClick={() => setImportData(prev => ({ ...prev, sheetUrl: mosqueConfig.googleSheetUrl || '' }))}
+                    >
+                      Use This URL
+                    </Button>
+                  </div>
+                </div>
+              )}
               <Input
                 id="sheetUrl"
                 name="sheetUrl"
@@ -195,7 +225,7 @@ export const ImportPrayerTimesDialog = ({
                 Paste the full URL or just the Sheet ID from the address bar
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="tabName">Sheet/Tab Name</Label>
               <Input
@@ -206,7 +236,7 @@ export const ImportPrayerTimesDialog = ({
                 placeholder="Sheet1"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="hasHeaderRow">First Row is Header</Label>
               <Select
@@ -222,7 +252,7 @@ export const ImportPrayerTimesDialog = ({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2 pb-4">
               <Label htmlFor="isPublic">Sheet is Public</Label>
               <Select
@@ -240,7 +270,7 @@ export const ImportPrayerTimesDialog = ({
             </div>
           </form>
         </ScrollArea>
-        
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel

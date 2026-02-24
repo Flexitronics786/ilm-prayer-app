@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { formatDate } from "@/utils/dateUtils";
 import PrayerTimesTable from "@/components/PrayerTimesTable";
-import PhoneReminder from "@/components/PhoneReminder";
+
 import PageHeader from "@/components/PageHeader";
 import LoadingScreen from "@/components/LoadingScreen";
 import KeepAwake from "@/components/KeepAwake";
@@ -14,8 +14,8 @@ import { Toaster } from "sonner";
 const Index = () => {
   const [currentDate, setCurrentDate] = useState(formatDate());
   const isTV = useTVDisplay();
-  const { prayerTimes, isLoading, detailedTimes } = usePrayerTimesData();
-  
+  const { prayerTimes, isLoading, detailedTimes, tomorrowDetailedTimes } = usePrayerTimesData();
+
   // Initialize prayer time alerts (without directly using the returned value)
   usePrayerTimeAlerts(prayerTimes, detailedTimes);
 
@@ -23,7 +23,7 @@ const Index = () => {
     const dateInterval = setInterval(() => {
       setCurrentDate(formatDate());
     }, 60000);
-    
+
     return () => clearInterval(dateInterval);
   }, []);
 
@@ -32,26 +32,27 @@ const Index = () => {
   }
 
   return (
-    <div className={`min-h-screen relative overflow-hidden ${isTV ? 'tv-display' : 'py-2 px-3'} bg-gradient-to-b from-amber-100 to-amber-50`}>
+    <div className={`min-h-screen relative overflow-hidden ${isTV ? 'tv-display' : 'py-2 px-3'} bg-white`}>
       <div className="pattern-overlay"></div>
       <KeepAwake />
       {/* Add Toaster for other notifications (not prayer alerts) */}
       <Toaster position={isTV ? "top-center" : "bottom-right"} toastOptions={{ className: isTV ? 'tv-toast' : '' }} />
-      
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
-        <div className="grid grid-cols-1 gap-4 flex-grow">
-          <div className="w-full flex flex-col">
+
+      <div className={`${isTV ? 'w-full max-w-[96%]' : 'max-w-7xl'} mx-auto h-full flex flex-col`}>
+        <div className="grid grid-cols-1 gap-4 flex-grow h-full">
+          <div className="w-full flex flex-col h-full">
             <PageHeader currentDate={currentDate} isTV={isTV} />
-            
-            <div className="flex-grow">
-              <PrayerTimesTable 
-                prayerTimes={prayerTimes} 
-                detailedTimes={detailedTimes} 
-                compactView={isTV} 
+
+            <div className="flex-grow flex flex-col min-h-0">
+              <PrayerTimesTable
+                prayerTimes={prayerTimes}
+                detailedTimes={detailedTimes}
+                tomorrowDetailedTimes={tomorrowDetailedTimes}
+                compactView={isTV}
               />
             </div>
-            
-            <PhoneReminder isTVMode={isTV} />
+
+
           </div>
         </div>
       </div>

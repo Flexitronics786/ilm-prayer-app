@@ -1,0 +1,16 @@
+{
+    "id": "com.ilmprayer.display",
+    "version": "1.0.1",
+    "vendor": "ILM Prayer",
+    "type": "web",
+    "main": "index.html",
+    "title": "Prayer Timetable",
+    "icon": "icon.png",
+    "largeIcon": "largeIcon.png",
+    "bgColor": "#ffffff",
+    "enablePigScreenSaver": false,
+    "supportQuickStart": true,
+    "screenSaverProperties": {
+        "preferredType": 3
+    }
+}
